@@ -8,6 +8,7 @@ import psycopg2
 from fastapi import FastAPI, HTTPException
 from psycopg2.extras import RealDictCursor
 from pydantic import BaseModel
+from prometheus_fastapi_instrumentator import Instrumentator
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -42,6 +43,7 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(lifespan=lifespan)
+Instrumentator().instrument(app).expose(app)
 
 
 @app.get("/datasets", response_model=list[Dataset])
