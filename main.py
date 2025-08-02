@@ -8,10 +8,18 @@ import psycopg2
 from fastapi import FastAPI, HTTPException
 from psycopg2.extras import RealDictCursor
 from pydantic import BaseModel
-from prometheus_fastapi_instrumentator import Instrumentator
 
+from prometheus_fastapi_instrumentator import Instrumentator
+from os import getenv
+from multiprocessing import Queue
+from logging_loki import LokiQueueHandler
+
+loki_logs_handler = LokiQueueHandler(
+    Queue(-1), url=getenv("LOKI_ENDPOINT"), tags={"application": "fastapi"}, version="1"
+)
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+logger.addHandler(loki_logs_handler)
 
 
 class Dataset(BaseModel):
@@ -44,7 +52,6 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(lifespan=lifespan)
 Instrumentator().instrument(app).expose(app)
-
 
 @app.get("/datasets", response_model=list[Dataset])
 async def get_datasets():

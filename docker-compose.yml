@@ -1,6 +1,9 @@
 services:
   api:
+    container_name: api
     build: .
+    environment:
+      - LOKI_ENDPOINT=${LOKI_ENDPOINT}
     ports:
       - "8000:8000"
     volumes:
@@ -10,6 +13,7 @@ services:
         condition: service_healthy
 
   db:
+    container_name: db
     image: postgres:17
     environment:
       POSTGRES_PASSWORD: postgres
@@ -29,7 +33,7 @@ services:
     ports:
       - 9090:9090
     volumes:
-      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+      - ./config/prometheus.yml:/etc/prometheus/prometheus.yml
     command:
       - "--config.file=/etc/prometheus/prometheus.yml"
 
@@ -60,6 +64,14 @@ services:
     environment:
       - GF_SECURITY_ADMIN_USER=${ADMIN_USER}
       - GF_SECURITY_ADMIN_PASSWORD=${ADMIN_PASSWORD}
+    depends_on:
+      - prometheus
+
+  loki:
+    container_name: loki
+    image: grafana/loki:latest
+    ports:
+      - 3100:3100
 
 volumes:
   postgres_data:
