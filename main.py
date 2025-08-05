@@ -14,13 +14,24 @@ from os import getenv
 from multiprocessing import Queue
 from logging_loki import LokiQueueHandler
 
+from opentelemetry import trace
+from opentelemetry.sdk.resources import Resource
+from opentelemetry.sdk.trace import TracerProvider
+from opentelemetry.sdk.trace.export import BatchSpanProcessor
+from opentelemetry.exporter.otlp.proto.grpc.trace_exporter import OTLPSpanExporter
+
+from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor
+from opentelemetry.instrumentation.requests import RequestsInstrumentor
+from opentelemetry.propagate import inject
+from opentelemetry.instrumentation.psycopg2 import Psycopg2Instrumentor
+
+Psycopg2Instrumentor().instrument()
 loki_logs_handler = LokiQueueHandler(
     Queue(-1), url=getenv("LOKI_ENDPOINT"), tags={"application": "fastapi"}, version="1"
 )
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 logger.addHandler(loki_logs_handler)
-
 
 class Dataset(BaseModel):
     id: int
@@ -49,8 +60,16 @@ async def lifespan(app: FastAPI):
     # Shutdown
     logger.info("Shutting down...")
 
-
 app = FastAPI(lifespan=lifespan)
+# Otel collector for traces
+resource = Resource(attributes={"service.name": "fastapi"})
+trace.set_tracer_provider(TracerProvider(resource=resource))
+trace.get_tracer_provider().add_span_processor(
+    BatchSpanProcessor(OTLPSpanExporter(endpoint="http://otel-collector:4317", insecure=True))
+)
+FastAPIInstrumentor.instrument_app(app)
+RequestsInstrumentor().instrument()
+# Prometheus Metrics
 Instrumentator().instrument(app).expose(app)
 
 @app.get("/datasets", response_model=list[Dataset])
