@@ -11,14 +11,14 @@ You can build and run it locally as follows:
 docker compose up --build
 ```
 
-This will start the application on port 8000. You can then access the API at http://localhost:8000:
+You can then access the API at https://fastapi.docker.localhost
 
 ```bash
-curl -X POST "http://localhost:8000/datasets?name=my-dataset"
+curl -kX POST "https://fastapi.docker.localhost/datasets?name=my-dataset"
 
-curl -X GET "http://localhost:8000/datasets"
+curl -kX GET "https://fastapi.docker.localhost/datasets"
 
-curl -X POST "http://localhost:8000/datasets/1/reticulate"
+curl -kX POST "https://fastapi.docker.localhost/datasets/1/reticulate"
 ```
 
 ## Your mission
@@ -31,10 +31,22 @@ Your goal is to add observability to the application. You are free to modify any
 
 1. List the metrics that you find interesting to monitor, and why.
 
-2. Add the necessary code and/or services to collect these metrics (we have included a few pointers to the documentation
-  of popular tools, but feel free to use any other tool you find relevant).
+| **Metric**        | **Why?**                                        |
+| ----------------- | ----------------------------------------------- |
+| Request Count     | Understand app usage                            |
+| Request Duration  | Detect performance issue                        |
+| 5xx Error         | Detect server-side application issues           |
+| DB Query Duration | Detect slow or inefficient database queries     |
+| CPU Usage         | Detect CPU issue                                |
+| Memory Usage      | Spot memory leaks or high memory usage          |
+| App Uptime        | Ensure the application is running and available |
 
-3. Add the necessary code and/or services to visualize these metrics.
+2. Add the necessary code and/or services to collect these metrics (we have included a few pointers to the documentation
+   of popular tools, but feel free to use any other tool you find relevant).  
+   Service Added: Prometheus, OpenTelemetry, Loki, Node-exporter
+
+3. Add the necessary code and/or services to visualize these metrics.  
+   Service Added: Grafana and Jaeger
 
 ## Appendix: Tool documentation
 
